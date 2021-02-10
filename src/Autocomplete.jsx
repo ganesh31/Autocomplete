@@ -1,5 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
-import { customStyles, StyledButton, StyledInput } from "./Autocomplete.styles";
+import {
+  customStyles,
+  StyledButton,
+  StyledInput,
+  StyledMenu,
+  StyledItem
+} from "./Autocomplete.styles";
 import "./styles.css";
 
 function useOnClickOutside(ref, handler) {
@@ -7,7 +13,6 @@ function useOnClickOutside(ref, handler) {
     const listener = (event) => {
       // Do nothing if clicking ref's element or descendent elements
       if (!ref.current || ref.current.contains(event.target)) {
-        console.log("Inside decendent element");
         return;
       }
       handler(event);
@@ -58,6 +63,11 @@ const Autocomplete = () => {
   const [options, setOptions] = useState([]);
   const [search, setSearch] = useState("");
 
+  const clearSelection = () => {
+    setDisplay(false);
+    setSearch("");
+  };
+
   useOnClickOutside(ref, () => setDisplay(false));
 
   useEffect(() => {
@@ -73,42 +83,60 @@ const Autocomplete = () => {
     setDisplay(false);
   };
 
+  const handleChange = (event) => {
+    setSearch(event.target.value);
+
+    if (!display) {
+      setDisplay(true);
+    }
+  };
+
+  const handleEsc = ({ keyCode }) => {
+    if (display && keyCode === 27) {
+      setDisplay(false);
+    }
+  };
+
   return (
     <div ref={ref} {...customStyles({ width: 250, margin: "auto" })}>
       <div {...customStyles({ position: "relative" })}>
         <StyledInput
           id="auto"
           onClick={() => setDisplay(!display)}
-          onChange={(event) => setSearch(event.target.value)}
+          onChange={handleChange}
+          onKeyUp={handleEsc}
           value={search}
           placeholder="Type to search"
         />
         {search ? (
-          <StyledButton>
+          <StyledButton onClick={clearSelection}>
             <XIcon />
           </StyledButton>
         ) : (
-          ""
+          <StyledButton onClick={() => setDisplay(!display)}>
+            <ArrowIcon isOpen={display} />
+          </StyledButton>
         )}
       </div>
-      {display && (
-        <div className="autoContainer">
-          {options
-            .filter(({ name }) => name.includes(search.toLowerCase()))
-            .map((value) => {
-              return (
-                <div
-                  className="option"
-                  key={value.name}
-                  onClick={() => onOptionsSelect(value.name)}
-                  tabIndex="0"
-                >
-                  <span>{value.name}</span>
-                </div>
-              );
-            })}
-        </div>
-      )}
+      <div {...customStyles({ position: "relative" })}>
+        {display && (
+          <StyledMenu isOpen={display}>
+            {options
+              .filter(({ name }) => name.includes(search.toLowerCase()))
+              .map((value) => {
+                return (
+                  <StyledItem
+                    key={value.name}
+                    onClick={() => onOptionsSelect(value.name)}
+                    tabIndex="0"
+                  >
+                    <span>{value.name}</span>
+                  </StyledItem>
+                );
+              })}
+          </StyledMenu>
+        )}
+      </div>
     </div>
   );
 };
